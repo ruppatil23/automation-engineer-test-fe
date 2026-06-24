@@ -9,6 +9,82 @@ jobs:
   ui-tests:
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd="mongosh --eval 'db.adminCommand({ ping: 1 })' || exit 1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend deps
+        working-directory: automation-engineer-test-fe
+        run: npm ci
+
+      - name: Install backend deps
+        run: npm ci --prefix automation-engineer-test-be
+
+      - name: Start backend (in background)
+        run: |
+          npm --prefix automation-engineer-test-be run dev &
+        env:
+          MONGO_URI: mongodb://localhost:27017/shift-manager
+          PORT: 8001
+          JWT_SECRET: dev-secret-for-local-testing-please-change
+          FRONTEND_URL: http://localhost:5173
+
+      - name: Wait for backend to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sS http://localhost:8001/api/docs >/dev/null 2>&1; then
+              echo "backend ready"
+              exit 0
+            fi
+            echo "waiting for backend ($i/30)..."
+            sleep 1
+          done
+          echo "backend failed to start"
+          exit 1
+
+      - name: Install Playwright browsers
+        working-directory: automation-engineer-test-fe
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        working-directory: automation-engineer-test-fe
+        env:
+          VITE_API_BASE_URL: http://localhost:8001/api
+        run: npx playwright test
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: automation-engineer-test-fe/playwright-report/
+name: Playwright UI Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
