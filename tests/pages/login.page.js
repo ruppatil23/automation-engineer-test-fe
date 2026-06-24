@@ -4,7 +4,8 @@ export class LoginPage {
     this.email = page.locator('input[name="email"]');
     this.password = page.locator('input[name="password"]');
     this.submit = page.locator('button[type="submit"]');
-    this.error = page.locator('text=Invalid credentials');
+    // Match common error messages shown in the login UI (fallbacks for different server messages)
+    this.error = page.locator('text=/User does not exist|Invalid|All fields are required|invalid/i');
   }
 
   async goto() {

@@ -64,6 +64,13 @@ class ApiClient {
       },
       async (error) => {
         if (error.response?.status === 401) {
+          // Clear persisted user state so client-side route guards react to unauthenticated state
+          try {
+            useUserStore.getState().setUser(null);
+          } catch (err) {
+            // ignore
+          }
+
           const user = useUserStore.getState().user;
           if (user?.authToken) {
             if (error.config) {
