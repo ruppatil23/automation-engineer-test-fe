@@ -33,43 +33,36 @@ jobs:
         working-directory: .
         run: npm ci
 
-      - name: Install backend deps (if present)
+      - name: Clone backend repository
         run: |
-          if [ -d automation-engineer-test-be ]; then
-            npm ci --prefix automation-engineer-test-be
-          else
-            echo "backend folder not present - skipping install"
+          if [ ! -d automation-engineer-test-be ]; then
+            git clone https://github.com/ruppatil23/automation-engineer-test-be.git automation-engineer-test-be
           fi
 
-      - name: Start backend (in background, if present)
+      - name: Install backend deps
+        run: npm ci --prefix automation-engineer-test-be
+
+      - name: Start backend (in background)
         run: |
-          if [ -d automation-engineer-test-be ]; then
-            npm --prefix automation-engineer-test-be run dev &
-          else
-            echo "backend folder not present - skipping backend start"
-          fi
+          npm --prefix automation-engineer-test-be run dev &
         env:
           MONGO_URI: mongodb://localhost:27017/shift-manager
           PORT: 8001
           JWT_SECRET: dev-secret-for-local-testing-please-change
           FRONTEND_URL: http://localhost:5173
 
-      - name: Wait for backend to be ready (if started)
+      - name: Wait for backend to be ready
         run: |
-          if [ -d automation-engineer-test-be ]; then
-            for i in $(seq 1 30); do
-              if curl -sS http://localhost:8001/api/docs >/dev/null 2>&1; then
-                echo "backend ready"
-                exit 0
-              fi
-              echo "waiting for backend ($i/30)..."
-              sleep 1
-            done
-            echo "backend failed to start"
-            exit 1
-          else
-            echo "backend folder not present - skipping backend readiness check"
-          fi
+          for i in $(seq 1 30); do
+            if curl -sS http://localhost:8001/api/docs >/dev/null 2>&1; then
+              echo "backend ready"
+              exit 0
+            fi
+            echo "waiting for backend ($i/30)..."
+            sleep 1
+          done
+          echo "backend failed to start"
+          exit 1
 
       - name: Install Playwright browsers
         working-directory: .
