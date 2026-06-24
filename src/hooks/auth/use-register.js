@@ -40,6 +40,7 @@ const useRegister = () => {
           password: password,
         },
       });
+      
 
       if (response && response.token && response.user) {
         setSuccessMessage(
