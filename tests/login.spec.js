@@ -1,15 +1,14 @@
 import { test, expect } from '@playwright/test';
 import { LoginPage } from './pages/login.page.js';
 import { DashboardPage } from './pages/dashboard.page.js';
+import { registerFreshUser } from './test-user.utils.js';
 
 test.describe('Login Tests', () => {
   test('valid login shows dashboard', async ({ page }) => {
+    const { email, password } = await registerFreshUser(page);
+
     const login = new LoginPage(page);
     await login.goto();
-
-    const email = process.env.TEST_USER_EMAIL || 'test@example.com';
-    const password = process.env.TEST_USER_PASSWORD || 'Password123!';
-
     await login.login(email, password);
 
     const dashboard = new DashboardPage(page);
