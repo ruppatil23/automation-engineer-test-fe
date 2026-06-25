@@ -6,9 +6,10 @@ test('protected route redirects to login when unauthenticated', async ({ page })
   // Navigate to app root first so we have same-origin access to window.localStorage
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());
+  await page.reload();
 
   // Attempt to open a protected URL directly
-  await page.goto('/shifts');
+  await page.goto('/_shift/');
 
   // Short delay to allow client-side redirect to occur
   await page.waitForTimeout(500);
